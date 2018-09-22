@@ -128,7 +128,7 @@ class _FPN(nn.Module):
             for i, l in enumerate(range(2, 6)):
                 if (roi_level == l).sum() == 0:
                     continue
-                idx_l = (roi_level == l).nonzero().squeeze()
+                idx_l = (roi_level == l).nonzero().view(-1) #squeeze()
                 box_to_levels.append(idx_l)
                 scale = feat_maps[i].size(2) / im_info[0][0]
                 feat = self.RCNN_roi_align(feat_maps[i], rois[idx_l], scale)
@@ -144,7 +144,7 @@ class _FPN(nn.Module):
             for i, l in enumerate(range(2, 6)):
                 if (roi_level == l).sum() == 0:
                     continue
-                idx_l = (roi_level == l).nonzero().squeeze()
+                idx_l = (roi_level == l).nonzero().view(-1) #squeeze()
                 box_to_levels.append(idx_l)
                 scale = feat_maps[i].size(2) / im_info[0][0]
                 feat = self.RCNN_roi_pool(feat_maps[i], rois[idx_l], scale)

@@ -14,8 +14,8 @@ import numpy as np
 import numpy.random as npr
 
 from model.utils.config import cfg
-from generate_anchors import generate_anchors, generate_anchors_all_pyramids
-from bbox_transform import clip_boxes, bbox_overlaps_batch, bbox_transform_batch
+from .generate_anchors import generate_anchors, generate_anchors_all_pyramids
+from .bbox_transform import clip_boxes, bbox_overlaps_batch, bbox_transform_batch
 
 import pdb
 
@@ -63,8 +63,8 @@ class _AnchorTargetLayer_FPN(nn.Module):
         
         keep = ((anchors[:, 0] >= -self._allowed_border) &
                 (anchors[:, 1] >= -self._allowed_border) &
-                (anchors[:, 2] < long(im_info[0][1]) + self._allowed_border) &
-                (anchors[:, 3] < long(im_info[0][0]) + self._allowed_border))
+                (anchors[:, 2] < float(im_info[0][1]) + self._allowed_border) &
+                (anchors[:, 3] < float(im_info[0][0]) + self._allowed_border))
 
         inds_inside = torch.nonzero(keep).view(-1)
 
@@ -133,7 +133,7 @@ class _AnchorTargetLayer_FPN(nn.Module):
         bbox_inside_weights[labels==1] = cfg.TRAIN.RPN_BBOX_INSIDE_WEIGHTS[0]
 
         if cfg.TRAIN.RPN_POSITIVE_WEIGHT < 0:
-            num_examples = torch.sum(labels[i] >= 0)
+            num_examples = torch.sum(labels[i] >= 0).item()
             positive_weights = 1.0 / num_examples
             negative_weights = 1.0 / num_examples
         else:
@@ -142,6 +142,7 @@ class _AnchorTargetLayer_FPN(nn.Module):
 
         bbox_outside_weights[labels == 1] = positive_weights
         bbox_outside_weights[labels == 0] = negative_weights
+        # print("positive_weights:", positive_weights.type())
 
         labels = _unmap(labels, total_anchors, inds_inside, batch_size, fill=-1)
         bbox_targets = _unmap(bbox_targets, total_anchors, inds_inside, batch_size, fill=0)

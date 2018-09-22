@@ -33,6 +33,7 @@ from model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
 from model.utils.net_utils import weights_normal_init, save_net, load_net, \
       adjust_learning_rate, save_checkpoint, clip_gradient
 
+# from model.fpn.vgg16 import vgg16
 from model.fpn.resnet import resnet
 import pdb
 
@@ -61,7 +62,7 @@ def parse_args():
                       default=10000, type=int)
 
   parser.add_argument('--save_dir', dest='save_dir',
-                      help='directory to save models', default="/srv/share/jyang375/models",
+                      help='directory to save models', default="/home/wangshaoju/fpn.pytorch/models",
                       nargs=argparse.REMAINDER)
   parser.add_argument('--num_workers', dest='num_workers',
                       help='number of worker to load data',
@@ -250,7 +251,9 @@ if __name__ == '__main__':
     cfg.CUDA = True
 
   # initilize the network here.
-  if args.net == 'res101':
+  if args.net == 'vgg16':
+    fasterRCNN = vgg16(imdb.classes, pretrained=True, class_agnostic=args.class_agnostic)
+  elif args.net == 'res101':
     FPN = resnet(imdb.classes, 101, pretrained=True, class_agnostic=args.class_agnostic)
   elif args.net == 'res50':
     FPN = resnet(imdb.classes, 50, pretrained=True, class_agnostic=args.class_agnostic)
@@ -333,7 +336,9 @@ if __name__ == '__main__':
            + RCNN_loss_cls.mean() + RCNN_loss_bbox.mean()
       loss_temp += loss.data[0]
 
-      # backward
+      # backwad
+      if args.net == "vgg16":
+          clip_gradient(FPN, 10.)
       optimizer.zero_grad()
       loss.backward()
       optimizer.step()
@@ -351,8 +356,8 @@ if __name__ == '__main__':
           fg_cnt = torch.sum(roi_labels.data.ne(0))
           bg_cnt = roi_labels.data.numel() - fg_cnt
         else:
-          loss_rpn_cls = RCNN_rpn.rpn_loss_cls.data[0]
-          loss_rpn_box = RCNN_rpn.rpn_loss_box.data[0]
+          loss_rpn_cls = rpn_loss_cls.data[0]
+          loss_rpn_box = rpn_loss_box.data[0]
           loss_rcnn_cls = RCNN_loss_cls.data[0]
           loss_rcnn_box = RCNN_loss_bbox.data[0]
           fg_cnt = torch.sum(roi_labels.data.ne(0))
